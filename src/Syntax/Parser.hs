@@ -38,17 +38,23 @@ lambda = do
     _ <- symbol "."
     Lam () v <$> expr
 
+atom :: Parser PlainExpr
+atom = choice
+  [ variable
+  , parens expr
+  , lambda
+  ]
+
 expr :: Parser PlainExpr
 expr = choice
     [ try lambda
-    , try variable
-    , parens application
+    , application
     ]
 
 application :: Parser PlainExpr
 application = do
-    hd <- expr
-    args <- many expr
+    hd <- atom
+    args <- many atom
     pure $ foldl (App ()) hd args
 
 parseLambdaExpr
