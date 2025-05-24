@@ -4,7 +4,7 @@ import Syntax.Parser (parseLambdaExpr)
 import System.Environment (getArgs)
 import qualified Data.Text.IO as T
 import Data.Text (unpack)
-import Syntax.Ast (runLabel, varFacts, appFacts, lambdaFacts)
+import Syntax.Ast (runLabel, varFacts, appFacts, lambdaFacts, LabelError (UnboundVariable))
 import qualified Data.Text as T
 
 main :: IO ()
@@ -23,19 +23,25 @@ processFile fp = do
       putStrLn err
     Right ast -> do
       let
-        labeledAST = runLabel ast
-        vFacts = varFacts labeledAST
-        aFacts = appFacts labeledAST
-        lFacts = lambdaFacts labeledAST
-
-        writeFacts name facts = do
-          let outFile = name <> ".facts" 
-          T.writeFile outFile
-            ( T.unlines facts )
-          
-          putStrLn $ "Wrote " <> show (length facts) <> " facts to " <> outFile
+        labeledASTE = runLabel ast
       
-      putStrLn "Successfully parsed lambda expression, now writing fact files:"
-      writeFacts "Var" vFacts
-      writeFacts "App" aFacts
-      writeFacts "Lambda" lFacts
+      case labeledASTE of
+        Left (UnboundVariable err) ->
+          putStrLn $ "Error encountered while labeling AST: " <> err
+        Right labeledAST -> do
+          let        
+            vFacts = varFacts labeledAST
+            aFacts = appFacts labeledAST
+            lFacts = lambdaFacts labeledAST
+
+            writeFacts name facts = do
+              let outFile = name <> ".facts" 
+              T.writeFile outFile
+                ( T.unlines facts )
+              
+              putStrLn $ "Wrote " <> show (length facts) <> " facts to " <> outFile
+          
+          putStrLn "Successfully parsed lambda expression, now writing fact files:"
+          writeFacts "Var" vFacts
+          writeFacts "App" aFacts
+          writeFacts "Lambda" lFacts
