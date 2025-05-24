@@ -1,0 +1,21 @@
+.decl App(label:number, exprLeft:number, exprRight:number)
+.decl Lambda(label:number, var:number, expr:number)
+.decl Var(label:number)
+.decl FlowsTo(source:number, target:number)
+
+.input App (IO=file, filename="App.facts", delimiter=",")
+.input Lambda (IO=file, filename="Lambda.facts", delimiter=",")
+.input Var (IO=file, filename="Var.facts", delimiter=",")
+
+FlowsTo(label, label) :- Lambda(label, _, _).
+FlowsTo(appLabel, val) :- App(appLabel, left, _),
+    FlowsTo(left, lambdaLabel),
+    FlowsTo(innerExp, val),
+    Lambda(lambdaLabel, _, innerExp).
+FlowsTo(variableLabel, val) :-
+    Lambda(lambdaLabel, variableLabel, _),
+    App(_, left, right),
+    FlowsTo(left, lambdaLabel),
+    FlowsTo(right, val).
+
+.output FlowsTo
